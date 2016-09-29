@@ -29,23 +29,34 @@ public class TestRowCountCoprocessor {
 	public static void main(String[] args) throws Exception {
 		System.setProperty("HADOOP_USER_NAME", "hdfs");
 
+		String tbl = "users";
+		if (args.length > 0) {
+			tbl = args[0];
+		}
+
 		Configuration conf = HBaseConfiguration.create();
 		conf.set("hbase.zookeeper.property.clientPort", "2181");
 		conf.set("hbase.zookeeper.quorum", "192.168.2.180,192.168.2.179,192.168.2.178");
 		conf.set("hbase.master", "192.168.2.179:60000");
-		TableName tableName = TableName.valueOf("users");
+		TableName tableName = TableName.valueOf(tbl);
 		Path path = new Path("hdfs://192.168.2.180:8020/hbase/service_rowcnt.jar");
 		Connection connection = ConnectionFactory.createConnection(conf);
 
 		Admin admin = connection.getAdmin();
 		admin.disableTable(tableName);
 		HTableDescriptor hTableDescriptor = new HTableDescriptor(tableName);
-		HColumnDescriptor columnFamily1 = new HColumnDescriptor("personalDet");
-		columnFamily1.setMaxVersions(3);
-		hTableDescriptor.addFamily(columnFamily1);
-		 HColumnDescriptor columnFamily2 = new HColumnDescriptor("salaryDet");
-		 columnFamily2.setMaxVersions(3);
-		 hTableDescriptor.addFamily(columnFamily2);
+		if (!tbl.equals("users")) {
+			HColumnDescriptor columnFamily1 = new HColumnDescriptor("d");
+			columnFamily1.setMaxVersions(3);
+			hTableDescriptor.addFamily(columnFamily1);
+		} else {
+			HColumnDescriptor columnFamily1 = new HColumnDescriptor("personalDet");
+			columnFamily1.setMaxVersions(3);
+			hTableDescriptor.addFamily(columnFamily1);
+			HColumnDescriptor columnFamily2 = new HColumnDescriptor("salaryDet");
+			columnFamily2.setMaxVersions(3);
+			hTableDescriptor.addFamily(columnFamily2);
+		}
 		hTableDescriptor.addCoprocessor(RowCountEndpoint.class.getCanonicalName(), path, Coprocessor.PRIORITY_USER,
 				null);
 		admin.modifyTable(tableName, hTableDescriptor);
@@ -61,7 +72,7 @@ public class TestRowCountCoprocessor {
 						@Override
 						public Long call(RowCountService aggregate) throws IOException {
 							BlockingRpcCallback<CountResponse> rpcCallback = new BlockingRpcCallback<CountResponse>();
-							aggregate.getKeyValueCount(null, request, rpcCallback);
+							aggregate.getRowCount(null, request, rpcCallback);
 							CountResponse response = rpcCallback.get();
 							return response.hasCount() ? response.getCount() : 0L;
 						}

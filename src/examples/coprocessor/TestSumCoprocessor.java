@@ -29,12 +29,13 @@ public class TestSumCoprocessor {
 	public static void main(String[] args) throws Exception {
 		System.setProperty("HADOOP_USER_NAME", "hdfs");
 
+		
 		Configuration conf = HBaseConfiguration.create();
 		conf.set("hbase.zookeeper.property.clientPort", "2181");
 		conf.set("hbase.zookeeper.quorum", "192.168.2.180,192.168.2.179,192.168.2.178");
 		conf.set("hbase.master", "192.168.2.179:60000");
 		TableName tableName = TableName.valueOf("users");
-		Path path = new Path("hdfs://192.168.2.180:8020/hbase/coprocessor.jar");
+		Path path = new Path("hdfs://192.168.2.180:8020/hbase/service_rowcnt.jar");
 		Connection connection = ConnectionFactory.createConnection(conf);
 
 		Admin admin = connection.getAdmin();
